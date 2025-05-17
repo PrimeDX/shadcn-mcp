@@ -1,0 +1,56 @@
+{
+  "name": "shadcn-mcp",
+  "version": "0.1.0",
+  "description": "A Model Context Protocol (MCP) server for shadcn UI components",
+  "private": false,
+  "type": "module",
+  "bin": {
+    "shadcn-mcp": "./build/index.js",
+    "shadcn-mcp-install": "./install.js"
+  },
+  "files": [
+    "build",
+    "install.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js",
+    "install-server": "node install.js",
+    "postinstall": "echo \"Run 'npm run install-server' to configure the MCP server for Claude\"",
+    "test": "echo \"No tests yet - add tests here\" && exit 0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "0.6.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "shadcn",
+    "ui",
+    "components",
+    "mcp",
+    "claude",
+    "ai",
+    "model-context-protocol"
+  ],
+  "author": "shadcn-mcp contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/shadcn-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/shadcn-mcp/issues"
+  },
+  "homepage": "https://github.com/yourusername/shadcn-mcp#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
