@@ -5,6 +5,7 @@
  * It provides tools to:
  * - List available shadcn UI components
  * - Generate shadcn UI components with customization options
+ * - Initialize shadcn in a project
  * - Get component documentation
  */
 
@@ -78,7 +79,7 @@ const SHADCN_COMPONENTS = [
 const server = new Server(
   {
     name: "shadcn-mcp",
-    version: "0.1.0",
+    version: "0.2.0",
   },
   {
     capabilities: {
@@ -188,6 +189,28 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         }
       },
       {
+        name: "init_shadcn",
+        description: "Initialize shadcn in your project",
+        inputSchema: {
+          type: "object",
+          properties: {
+            project_path: {
+              type: "string",
+              description: "The path to your project where shadcn should be initialized"
+            },
+            tailwind_css: {
+              type: "boolean",
+              description: "Whether your project uses Tailwind CSS (default: true)"
+            },
+            typescript: {
+              type: "boolean",
+              description: "Whether your project uses TypeScript (default: true)"
+            }
+          },
+          required: ["project_path"]
+        }
+      },
+      {
         name: "get_component_info",
         description: "Get detailed information about a shadcn UI component",
         inputSchema: {
@@ -237,16 +260,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       try {
-        // Simulate the shadcn-ui CLI command
-        // In a real implementation, you would use the actual shadcn-ui CLI
-        const command = `cd ${projectPath} && npx shadcn-ui@latest add ${component} ${typescript ? '--typescript' : '--no-typescript'} ${tailwindCss ? '--tailwind' : '--no-tailwind'}`;
+        // Use the correct package name (shadcn instead of shadcn-ui)
+        const command = `cd ${projectPath} && npx shadcn@latest add ${component} ${typescript ? '--typescript' : '--no-typescript'} ${tailwindCss ? '--tailwind' : '--no-tailwind'}`;
         
-        // For demonstration purposes, we're just returning the command that would be executed
-        // In a real implementation, you would execute the command and return the result
+        // Actually execute the command
+        const { stdout, stderr } = await execAsync(command);
+        
         return {
           content: [{
             type: "text",
-            text: `Command that would be executed:\n\n${command}\n\nIn a real implementation, this would generate the ${component} component in your project at ${projectPath}.`
+            text: `Successfully generated ${component} component in ${projectPath}.\n\nOutput:\n${stdout}`
           }]
         };
       } catch (error) {
@@ -254,6 +277,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{
             type: "text",
             text: `Error generating component: ${error instanceof Error ? error.message : String(error)}`
+          }],
+          isError: true
+        };
+      }
+    }
+
+    case "init_shadcn": {
+      const projectPath = String(request.params.arguments?.project_path);
+      const tailwindCss = request.params.arguments?.tailwind_css !== false;
+      const typescript = request.params.arguments?.typescript !== false;
+      
+      try {
+        const command = `cd ${projectPath} && npx shadcn@latest init ${typescript ? '--typescript' : '--no-typescript'} ${tailwindCss ? '--tailwind' : '--no-tailwind'}`;
+        const { stdout, stderr } = await execAsync(command);
+        
+        return {
+          content: [{
+            type: "text",
+            text: `Successfully initialized shadcn in ${projectPath}.\n\nOutput:\n${stdout}`
+          }]
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: "text",
+            text: `Error initializing shadcn: ${error instanceof Error ? error.message : String(error)}`
           }],
           isError: true
         };

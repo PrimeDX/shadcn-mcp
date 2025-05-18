@@ -38,6 +38,9 @@ This means you can simply tell your AI assistant which component you want to use
 - `generate_component` - Generate a shadcn UI component in your project
   - Supports TypeScript and JavaScript
   - Configurable Tailwind CSS integration
+- `init_shadcn` - Initialize shadcn in your project
+  - Supports TypeScript and JavaScript
+  - Configurable Tailwind CSS integration
 - `get_component_info` - Get detailed information about a specific component
 
 ## Installation
@@ -125,12 +128,17 @@ What shadcn UI components are available?
 Generate a shadcn UI button component in my project at /path/to/my/project
 ```
 
-3. Get information about a specific component:
+3. Initialize shadcn in your project:
+```
+Initialize shadcn in my project at /path/to/my/project
+```
+
+4. Get information about a specific component:
 ```
 Tell me about the shadcn dialog component
 ```
 
-4. Create a complete UI with multiple components:
+5. Create a complete UI with multiple components:
 ```
 Create a dashboard using shadcn components in my Next.js project
 ```
@@ -142,7 +150,7 @@ For Next.js projects, you can initialize a new project with shadcn UI using:
 ```bash
 npx create-next-app@latest my-app
 cd my-app
-npx shadcn-ui@latest init
+npx shadcn@latest init
 ```
 
 Then ask your AI assistant to add specific components to your project.
