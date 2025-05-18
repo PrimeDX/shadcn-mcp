@@ -79,7 +79,7 @@ const SHADCN_COMPONENTS = [
 const server = new Server(
   {
     name: "shadcn-mcp",
-    version: "0.2.0",
+    version: "0.2.1",
   },
   {
     capabilities: {
@@ -260,10 +260,40 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       try {
-        // Use the correct package name (shadcn instead of shadcn-ui)
-        const command = `cd ${projectPath} && npx shadcn@latest add ${component} ${typescript ? '--typescript' : '--no-typescript'} ${tailwindCss ? '--tailwind' : '--no-tailwind'}`;
+        // Check if components.json exists, if not we need to initialize first
+        const componentsJsonPath = `${projectPath}/components.json`;
+        let componentsJsonExists = false;
         
-        // Actually execute the command
+        try {
+          await execAsync(`test -f ${componentsJsonPath}`);
+          componentsJsonExists = true;
+        } catch (error) {
+          // File doesn't exist, we'll handle this below
+        }
+        
+        // If components.json doesn't exist, we need to initialize shadcn first
+        if (!componentsJsonExists) {
+          // Use documented flags for init
+          const initCommand = `cd ${projectPath} && npx shadcn@latest init -y`;
+          await execAsync(initCommand);
+          
+          // Now update the components.json with the correct TypeScript and Tailwind settings
+          const componentsJsonContent = JSON.parse(await execAsync(`cat ${componentsJsonPath}`).then(res => res.stdout));
+          componentsJsonContent.tsx = typescript;
+          
+          // Ensure tailwind settings exist
+          if (!componentsJsonContent.tailwind) {
+            componentsJsonContent.tailwind = {};
+          }
+          
+          // Write the updated components.json
+          await execAsync(`echo '${JSON.stringify(componentsJsonContent, null, 2)}' > ${componentsJsonPath}`);
+        }
+        
+        // Now add the component using documented flags
+        const command = `cd ${projectPath} && npx shadcn@latest add ${component} -y`;
+        
+        // Execute the command
         const { stdout, stderr } = await execAsync(command);
         
         return {
@@ -289,15 +319,43 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const typescript = request.params.arguments?.typescript !== false;
       
       try {
-        const command = `cd ${projectPath} && npx shadcn@latest init ${typescript ? '--typescript' : '--no-typescript'} ${tailwindCss ? '--tailwind' : '--no-tailwind'}`;
-        const { stdout, stderr } = await execAsync(command);
+        // Use documented flags for init
+        const command = `cd ${projectPath} && npx shadcn@latest init -y`;
+        const { stdout } = await execAsync(command);
         
-        return {
-          content: [{
-            type: "text",
-            text: `Successfully initialized shadcn in ${projectPath}.\n\nOutput:\n${stdout}`
-          }]
-        };
+        // Now update the components.json with the correct TypeScript and Tailwind settings
+        const componentsJsonPath = `${projectPath}/components.json`;
+        
+        try {
+          // Read the generated components.json
+          const componentsJsonContent = JSON.parse(await execAsync(`cat ${componentsJsonPath}`).then(res => res.stdout));
+          
+          // Update TypeScript setting
+          componentsJsonContent.tsx = typescript;
+          
+          // Ensure tailwind settings exist and update them
+          if (!componentsJsonContent.tailwind) {
+            componentsJsonContent.tailwind = {};
+          }
+          
+          // Write the updated components.json
+          await execAsync(`echo '${JSON.stringify(componentsJsonContent, null, 2)}' > ${componentsJsonPath}`);
+          
+          return {
+            content: [{
+              type: "text",
+              text: `Successfully initialized shadcn in ${projectPath} with TypeScript ${typescript ? 'enabled' : 'disabled'} and Tailwind CSS ${tailwindCss ? 'enabled' : 'disabled'}.\n\nOutput:\n${stdout}`
+            }]
+          };
+        } catch (error) {
+          // If we can't update the components.json, return the original success message
+          return {
+            content: [{
+              type: "text",
+              text: `Successfully initialized shadcn in ${projectPath}.\n\nOutput:\n${stdout}`
+            }]
+          };
+        }
       } catch (error) {
         return {
           content: [{
