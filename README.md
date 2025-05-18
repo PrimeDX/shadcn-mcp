@@ -35,12 +35,14 @@ This means you can simply tell your AI assistant which component you want to use
 
 ### Tools
 - `list_components` - List all available shadcn UI components
-- `generate_component` - Generate a shadcn UI component in your project
+- `generate_component` - Provides the command to generate a shadcn UI component in your project
   - Supports TypeScript and JavaScript
   - Configurable Tailwind CSS integration
-- `init_shadcn` - Initialize shadcn in your project
+  - Returns the exact command to execute rather than executing it directly
+- `init_shadcn` - Provides the command to initialize shadcn in your project
   - Supports TypeScript and JavaScript
   - Configurable Tailwind CSS integration
+  - Returns the exact command to execute rather than executing it directly
 - `get_component_info` - Get detailed information about a specific component
 
 ## Installation
@@ -123,15 +125,17 @@ Once installed, you can ask your AI assistant to:
 What shadcn UI components are available?
 ```
 
-2. Generate a component in your project:
+2. Get the command to generate a component in your project:
 ```
 Generate a shadcn UI button component in my project at /path/to/my/project
 ```
+The assistant will provide the exact command to execute.
 
-3. Initialize shadcn in your project:
+3. Get the command to initialize shadcn in your project:
 ```
 Initialize shadcn in my project at /path/to/my/project
 ```
+The assistant will provide the exact command to execute.
 
 4. Get information about a specific component:
 ```

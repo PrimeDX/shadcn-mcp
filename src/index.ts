@@ -74,18 +74,34 @@ const SHADCN_COMPONENTS = [
 ];
 
 /**
+ * Import package.json to get version information
+ */
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Read package.json to get version
+const packageJsonPath = resolve(__dirname, '../package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+const MCP_VERSION = packageJson.version;
+
+/**
  * Create an MCP server with capabilities for resources and tools
  */
 const server = new Server(
   {
     name: "shadcn-mcp",
-    version: "0.2.1",
+    version: MCP_VERSION,
   },
   {
     capabilities: {
       resources: {},
       tools: {},
-    },
+    }
   }
 );
 
@@ -260,7 +276,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       try {
-        // Check if components.json exists, if not we need to initialize first
+        // Check if components.json exists
         const componentsJsonPath = `${projectPath}/components.json`;
         let componentsJsonExists = false;
         
@@ -273,40 +289,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         
         // If components.json doesn't exist, we need to initialize shadcn first
         if (!componentsJsonExists) {
-          // Use documented flags for init
+          // Return the init command instead of executing it
           const initCommand = `cd ${projectPath} && npx shadcn@latest init -y`;
-          await execAsync(initCommand);
-          
-          // Now update the components.json with the correct TypeScript and Tailwind settings
-          const componentsJsonContent = JSON.parse(await execAsync(`cat ${componentsJsonPath}`).then(res => res.stdout));
-          componentsJsonContent.tsx = typescript;
-          
-          // Ensure tailwind settings exist
-          if (!componentsJsonContent.tailwind) {
-            componentsJsonContent.tailwind = {};
-          }
-          
-          // Write the updated components.json
-          await execAsync(`echo '${JSON.stringify(componentsJsonContent, null, 2)}' > ${componentsJsonPath}`);
+          return {
+            content: [{
+              type: "text",
+              text: `Components.json not found. Please initialize shadcn first with this command:\n\n\`\`\`bash\n${initCommand}\n\`\`\`\n\nAfter initialization, you can add the ${component} component with:\n\n\`\`\`bash\ncd ${projectPath} && npx shadcn@latest add ${component} -y\n\`\`\``
+            }]
+          };
         }
         
-        // Now add the component using documented flags
+        // Return the command to add the component
         const command = `cd ${projectPath} && npx shadcn@latest add ${component} -y`;
-        
-        // Execute the command
-        const { stdout, stderr } = await execAsync(command);
         
         return {
           content: [{
             type: "text",
-            text: `Successfully generated ${component} component in ${projectPath}.\n\nOutput:\n${stdout}`
+            text: `To add the ${component} component to your project, run this command:\n\n\`\`\`bash\n${command}\n\`\`\``
           }]
         };
       } catch (error) {
         return {
           content: [{
             type: "text",
-            text: `Error generating component: ${error instanceof Error ? error.message : String(error)}`
+            text: `Error generating component command: ${error instanceof Error ? error.message : String(error)}`
           }],
           isError: true
         };
@@ -318,53 +324,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const tailwindCss = request.params.arguments?.tailwind_css !== false;
       const typescript = request.params.arguments?.typescript !== false;
       
-      try {
-        // Use documented flags for init
-        const command = `cd ${projectPath} && npx shadcn@latest init -y`;
-        const { stdout } = await execAsync(command);
-        
-        // Now update the components.json with the correct TypeScript and Tailwind settings
-        const componentsJsonPath = `${projectPath}/components.json`;
-        
-        try {
-          // Read the generated components.json
-          const componentsJsonContent = JSON.parse(await execAsync(`cat ${componentsJsonPath}`).then(res => res.stdout));
-          
-          // Update TypeScript setting
-          componentsJsonContent.tsx = typescript;
-          
-          // Ensure tailwind settings exist and update them
-          if (!componentsJsonContent.tailwind) {
-            componentsJsonContent.tailwind = {};
-          }
-          
-          // Write the updated components.json
-          await execAsync(`echo '${JSON.stringify(componentsJsonContent, null, 2)}' > ${componentsJsonPath}`);
-          
-          return {
-            content: [{
-              type: "text",
-              text: `Successfully initialized shadcn in ${projectPath} with TypeScript ${typescript ? 'enabled' : 'disabled'} and Tailwind CSS ${tailwindCss ? 'enabled' : 'disabled'}.\n\nOutput:\n${stdout}`
-            }]
-          };
-        } catch (error) {
-          // If we can't update the components.json, return the original success message
-          return {
-            content: [{
-              type: "text",
-              text: `Successfully initialized shadcn in ${projectPath}.\n\nOutput:\n${stdout}`
-            }]
-          };
-        }
-      } catch (error) {
-        return {
-          content: [{
-            type: "text",
-            text: `Error initializing shadcn: ${error instanceof Error ? error.message : String(error)}`
-          }],
-          isError: true
-        };
-      }
+      // Return the command to initialize shadcn
+      const initCommand = `cd ${projectPath} && npx shadcn@latest init -y`;
+      
+      // Also provide instructions for updating components.json if needed
+      const updateTsCommand = typescript ? 
+        `\n\n# After initialization, you may want to update components.json to set TypeScript:\njq '.tsx = true' ${projectPath}/components.json > ${projectPath}/components.json.tmp && mv ${projectPath}/components.json.tmp ${projectPath}/components.json` : '';
+      
+      return {
+        content: [{
+          type: "text",
+          text: `To initialize shadcn in your project, run this command:\n\n\`\`\`bash\n${initCommand}\n\`\`\`${updateTsCommand}\n\nThis will set up shadcn UI in your project with the default configuration. You'll be prompted to select a base color during initialization.`
+        }]
+      };
     }
 
     case "get_component_info": {
@@ -401,7 +373,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Shadcn UI MCP server running on stdio");
+  console.error(`Shadcn UI MCP server v${MCP_VERSION} running on stdio`);
 }
 
 main().catch((error) => {

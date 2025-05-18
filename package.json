@@ -1,6 +1,6 @@
 {
   "name": "shadcn-mcp",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A Model Context Protocol (MCP) server for shadcn UI components",
   "private": false,
   "type": "module",
@@ -24,7 +24,7 @@
     "test": "echo \"No tests yet - add tests here\" && exit 0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "0.6.0",
+    "@modelcontextprotocol/sdk": "^1.11.4",
     "axios": "^1.6.0"
   },
   "devDependencies": {
